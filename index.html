@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <video class="input_video"></video>
+  <script>
+const isFlipped = true;
+let keypointsFace = [];
+
+const videoElement = document.getElementsByClassName('input_video')[0];
+videoElement.style.display = "none";
+
+function onResults(results) {
+  keypointsFace = results.multiFaceLandmarks
+}
+
+const faceMesh = new FaceMesh({locateFile: (file) => {
+  return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+}});
+
+faceMesh.setOptions({
+  maxNumFaces: 1,
+  refineLandmarks: true,
+  minDetectionConfidence: 0.5,
+  minTrackingConfidence: 0.5
+});
+faceMesh.onResults(onResults);
+
+const camera = new Camera(videoElement, {
+  onFrame: async () => {
+    await faceMesh.send({image: videoElement});
+  },
+  width: 1280,
+  height: 720
+});
+camera.start();
+
+let videoImage;
+
+function setup() {
+  const canvas = createCanvas(500, 400);
+  videoImage = createGraphics(320, 180);
+}
+
+let imagePNG;
+
+function preload() {
+  imagePNG = loadImage("./eye05.png");
+}
+
+function draw() {
+  clear();
+  background("rgba(100, 100, 255, 0.2)");
+
+  videoImage.drawingContext.drawImage(
+    videoElement,
+    0,
+    0,
+    videoImage.width,
+    videoImage.height
+  );
+
+  push();
+  if (isFlipped) {
+    translate(width, 0);
+    scale(-1, 1);
+  }
+  displayWidth = width;
+  displayHeight = (width * videoImage.height) / videoImage.width;
+  image(videoImage, 0, 0, displayWidth, displayHeight);
+  pop();
+
+  if (keypointsFace.length > 0) {
+    // console.log(keypointsFace);
+
+    const indexLeftIris = {
+      center: keypointsFace[0][468],
+      right: keypointsFace[0][469],
+      up: keypointsFace[0][470],
+      left: keypointsFace[0][471],
+      down: keypointsFace[0][472],
+    };
+    const indexRightIris = {
+      center: keypointsFace[0][473],
+      right: keypointsFace[0][474],
+      up: keypointsFace[0][475],
+      left: keypointsFace[0][476],
+      down: keypointsFace[0][477],
+    };
+
+    // for debug
+    // console.log(indexLeftIris);
+    // console.log(indexRightIris);
+
+    drawFire(indexLeftIris, displayWidth, displayHeight);
+    drawFire(indexRightIris, displayWidth, displayHeight);
+  }
+}
+
+function drawFire(position, inputWidth, inputHeight) {
+  push();
+  imageMode(CENTER);
+  tint(255, 128);
+  const x_width = Math.sqrt(Math.pow(position.right.x - position.left.x, 2) + Math.pow(position.right.y - position.left.y, 2));
+  const y_width = Math.sqrt(Math.pow(position.up.x - position.down.x, 2) + Math.pow(position.up.y - position.down.y, 2));
+  // for debug
+  // console.log(x_width + " " + y_width);
+  image(
+    imagePNG,
+    (1 - position.center.x) * inputWidth,
+    position.center.y * inputHeight,
+    imagePNG.width * x_width * 5,
+    imagePNG.height * y_width * 3
+  );
+  pop();
+}
+
+  </script>
+</body>
+
+</html>
+
