@@ -101,12 +101,12 @@ function draw() {
     // console.log(indexLeftIris);
     // console.log(indexRightIris);
 
-    drawFire(indexLeftIris, displayWidth, displayHeight);
-    drawFire(indexRightIris, displayWidth, displayHeight);
+    drawEye(indexLeftIris, displayWidth, displayHeight);
+    drawEye(indexRightIris, displayWidth, displayHeight);
   }
 }
 
-function drawFire(position, inputWidth, inputHeight) {
+function drawEye(position, inputWidth, inputHeight) {
   push();
   imageMode(CENTER);
   tint(255, 128);
